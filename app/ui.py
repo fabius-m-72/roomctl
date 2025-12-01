@@ -75,6 +75,13 @@ async def _get(url: str) -> dict:
 
 def _token(req:Request): return get_token_from_cookie(req)
 
+
+def _set_state_text(message: str) -> dict:
+    state = get_public_state()
+    state["text"] = message
+    set_public_state(state)
+    return state
+
 @router.get('/', response_class=HTMLResponse)
 async def home(req: Request, pin_error: bool = False):
     state = get_public_state()
@@ -90,12 +97,11 @@ async def home(req: Request, pin_error: bool = False):
 
 @router.post('/ui/scene/avvio_semplice')
 async def ui_avvio_semplice():
-    state = get_public_state(); state["text"]="Avvio lezione semplice...";set_public_state(state)
+    state = _set_state_text("Avvio lezione semplice in corso…")
     try:
-        code = await _post(f"{ROOMCTL_BASE}/api/scene/avvio_semplice", {})
+        _ = await _post(f"{ROOMCTL_BASE}/api/scene/avvio_semplice", {})
     except HTTPException as exc:
-        state["text"] = f"Errore Backend: {exc.detail}"
-        set_public_state(state)
+        _set_state_text(f"Errore avvio lezione semplice: {exc.detail}")
         return RedirectResponse(url="/", status_code=303)
 
     state["text"] = "Avviata lezione solo audio"
@@ -106,15 +112,14 @@ async def ui_avvio_semplice():
 
 @router.post('/ui/scene/avvio_video')
 async def ui_avvio_video():
-    state = get_public_state()
+    state = _set_state_text("Avvio lezione video in corso…")
     try:
-        code = await _post(f"{ROOMCTL_BASE}/api/scene/avvio_proiettore", {})
+        _ = await _post(f"{ROOMCTL_BASE}/api/scene/avvio_proiettore", {})
     except HTTPException as exc:
-        state["text"] = f"Errore Backend: {exc.detail}"
-        set_public_state(state)
+        _set_state_text(f"Errore avvio lezione video: {exc.detail}")
         return RedirectResponse(url="/", status_code=303)
 
-    state["text"] = "Sistema pronto"
+    state["text"] = "Lezione video avviata"
     state["current_lesson"] = "video"
     set_public_state(state)
     return RedirectResponse(url="/", status_code=303)
@@ -122,18 +127,17 @@ async def ui_avvio_video():
 
 @router.post('/ui/scene/avvio_video_combinata')
 async def ui_avvio_video_combinata():
-    state = get_public_state()
+    state = _set_state_text("Avvio lezione video combinata in corso…")
     try:
-        code = await _post(
+        _ = await _post(
             f"{ROOMCTL_BASE}/api/scene/avvio_proiettore",
             {"source": "HDMI2"},
         )
     except HTTPException as exc:
-        state["text"] = f"Errore Backend: {exc.detail}"
-        set_public_state(state)
+        _set_state_text(f"Errore avvio lezione combinata: {exc.detail}")
         return RedirectResponse(url="/", status_code=303)
 
-    state["text"] = "Sistema pronto"
+    state["text"] = "Lezione video combinata avviata"
     state["current_lesson"] = "combinata"
     set_public_state(state)
     return RedirectResponse(url="/", status_code=303)
@@ -141,15 +145,14 @@ async def ui_avvio_video_combinata():
    
 @router.post('/ui/scene/spegni_aula')
 async def ui_spegni_aula():
-    state = get_public_state()
+    state = _set_state_text("Arresto lezione e spegnimento aula in corso…")
     try:
-        code = await _post(f"{ROOMCTL_BASE}/api/scene/spegni_aula", {})
+        _ = await _post(f"{ROOMCTL_BASE}/api/scene/spegni_aula", {})
     except HTTPException as exc:
-        state["text"] = f"Errore Backend: {exc.detail}"
-        set_public_state(state)
+        _set_state_text(f"Errore spegnimento aula: {exc.detail}")
         return RedirectResponse(url="/", status_code=303)
 
-    state["text"] = "Sistema pronto"
+    state["text"] = "Aula spenta: sistema pronto"
     # nessuna lezione attiva
     state["current_lesson"] = None #state.pop("current_lesson", None) per rimuovere proprio la chiave
     set_public_state(state)
