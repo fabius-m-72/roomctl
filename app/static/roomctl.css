@@ -5,6 +5,8 @@
   --pad-x: 20px;          /* padding orizzontale */
   --pad-y: 14px;          /* padding verticale   */
 
+  --font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
   --header-h: 64px;       /* altezza header */
   --footer-h: 96px;       /* altezza footer */
   --gap: 14px;            /* gap griglia */
@@ -24,7 +26,13 @@
 html, body { width:100%; height:100%; }
 body {
   display:flex; align-items:center; justify-content:center;
+  margin: 0;
   background:#0f172a; color:#e2e8f0; overflow:hidden;
+  font-family: var(--font-family);
+}
+
+button, input, select, textarea {
+  font-family: inherit;
 }
 
 /* Wrapper fisso 1080x720 */
