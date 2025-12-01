@@ -601,6 +601,51 @@
       <section class="panel">
         <div class="panel-title">SPECIAL COMMAND</div>
 
+        {% set sched = power_schedule or {} %}
+        {% set selected_days = sched.get('days', ['mon','tue','wed','thu','fri']) %}
+        {% set sched_on = sched.get('on_time', '07:30') %}
+        {% set sched_off = sched.get('off_time', '19:00') %}
+        {% set sched_enabled = sched.get('enabled', False) %}
+
+        <div class="sub-title mt6">Programmazione Raspberry Pi 5</div>
+        <p class="op-help">
+          Imposta accensione e spegnimento giornalieri del Raspberry Pi (RTC con batteria tampone,
+          alimentazione sempre presente). La configurazione è salvata in <code>power_schedule.yaml</code>
+          e può essere applicata sul dispositivo con lo script nella cartella <code>config</code>.
+        </p>
+
+        <form method="post" action="/operator/power_schedule" class="column gap8 power-schedule-form">
+          <div class="row wrap gap12 align-center">
+            <label class="op-label small">Accensione</label>
+            <input type="time" name="on_time" value="{{ sched_on }}" class="input-time">
+            <label class="op-label small">Spegnimento</label>
+            <input type="time" name="off_time" value="{{ sched_off }}" class="input-time">
+            <label class="op-label small row align-center gap4">
+              <input type="checkbox" name="enabled" value="true" {% if sched_enabled %}checked{% endif %}>
+              <span>Abilitato</span>
+            </label>
+          </div>
+
+          <div class="row wrap gap8">
+            <label class="op-label small" style="min-width: 120px;">Giorni attivi</label>
+            <div class="row wrap gap8 weekday-row">
+              {% for code,label in [('mon','Lun'),('tue','Mar'),('wed','Mer'),('thu','Gio'),('fri','Ven'),('sat','Sab'),('sun','Dom')] %}
+              <label class="weekday-chip">
+                <input type="checkbox" name="days" value="{{ code }}" {% if code in selected_days %}checked{% endif %}>
+                <span>{{ label }}</span>
+              </label>
+              {% endfor %}
+            </div>
+          </div>
+
+          <div class="row wrap gap8 align-center">
+            <div class="op-help" style="margin:0;">
+              Gli orari sono in formato 24h (hh:mm). Assicurati che l'RTC sia sincronizzato.
+            </div>
+            <button class="btn-mini" type="submit">Salva programmazione</button>
+          </div>
+        </form>
+
         <div class="row wrap" style="margin-top:12px;">
           <form method="post" action="/ui/special/reboot_terminal"
                 onsubmit="return confirm('Sei sicuro di voler riavviare il terminale?');">
@@ -735,6 +780,38 @@
 .btn-mini.disabled {
   pointer-events: none;
   opacity: 0.4;
+}
+
+/* Pianificazione Raspberry */
+.power-schedule-form {
+  border: 1px solid var(--c-border, #cbd5e1);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(226, 232, 240, 0.25);
+}
+
+.input-time {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid var(--c-border, #cbd5e1);
+  background: #fff;
+  font-weight: 600;
+}
+
+.weekday-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--c-border, #cbd5e1);
+  background: #f8fafc;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6);
+}
+
+.weekday-chip input {
+  width: 16px;
+  height: 16px;
 }
 
 </style>

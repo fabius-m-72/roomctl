@@ -5,6 +5,7 @@ from app.state import set_public_state,get_public_state
 from app.drivers.pjlink import PJLinkClient
 from app.drivers.shelly_http import ShellyHTTP, ShellyHTTP_script
 from app.drivers.dsp408 import DSP408Client
+from app import power_schedule
 
 from fastapi import BackgroundTasks
 import asyncio, logging
@@ -68,6 +69,33 @@ class DspRecallReq(TokenReq):
 
 class PowerBody(BaseModel):
     on: bool
+
+
+class PowerScheduleReq(BaseModel):
+    on_time: str
+    off_time: str
+    days: list[str]
+    enabled: bool = True
+
+
+@router.get("/power/schedule")
+async def get_power_schedule():
+    """Restituisce la pianificazione di accensione/spegnimento del Raspberry."""
+
+    return power_schedule.load_power_schedule()
+
+
+@router.post("/power/schedule")
+async def set_power_schedule(body: PowerScheduleReq):
+    """Aggiorna e salva la pianificazione di accensione/spegnimento."""
+
+    try:
+        saved = power_schedule.save_power_schedule(body.dict())
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    return saved
+
 
 @router.post("/special/reboot_terminal")
 async def api_reboot_terminal(background_tasks: BackgroundTasks):
