@@ -3,9 +3,8 @@ from pydantic import BaseModel
 import os,yaml
 from app.state import set_public_state,get_public_state
 from app.drivers.pjlink import PJLinkClient
-from app.drivers.shelly_http import ShellyHTTP, ShellyHTTP_script
+from app.drivers.shelly_http import ShellyHTTP
 from app.drivers.dsp408 import DSP408Client
-from app import power_schedule
 
 from fastapi import BackgroundTasks
 import asyncio, logging
@@ -57,45 +56,11 @@ class DspStepReq(TokenReq):
     # esempio: bus="in_a", delta=-1 o +1
     bus: str
     delta: int
-
-class DspUsedReq(TokenReq):
-    # channel: 'in0'..'in3' oppure 'out0'..'out7'
-    channel: str
-    used: bool
-
 class DspRecallReq(TokenReq):
     # esempio: "F00", "U01", ...
     preset: str
-
 class PowerBody(BaseModel):
     on: bool
-
-
-class PowerScheduleReq(BaseModel):
-    on_time: str
-    off_time: str
-    days: list[str]
-    enabled: bool = True
-
-
-@router.get("/power/schedule")
-async def get_power_schedule():
-    """Restituisce la pianificazione di accensione/spegnimento del Raspberry."""
-
-    return power_schedule.load_power_schedule()
-
-
-@router.post("/power/schedule")
-async def set_power_schedule(body: PowerScheduleReq):
-    """Aggiorna e salva la pianificazione di accensione/spegnimento."""
-
-    try:
-        saved = power_schedule.save_power_schedule(body.dict())
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    return saved
-
 
 @router.post("/special/reboot_terminal")
 async def api_reboot_terminal(background_tasks: BackgroundTasks):
@@ -162,16 +127,16 @@ async def _power_sequence(on: bool):
         # 1) mains ON
         ok = await shelly_main.set_relay(ch_main, True)
         #log.info("Shelly mains ON: %s", ok)
-        #stato=get_public_state(); stato['text']='Alimentazione -> ON'; set_public_state(stato)
+        stato=get_public_state(); stato['text']='Alimentazione -> ON'; set_public_state(stato)
 
         # 2) attesa NIC
-        #stato=get_public_state(); stato['text']='Alimentazione --> ON'; set_public_state(stato)
+        stato=get_public_state(); stato['text']='Alimentazione --> ON'; set_public_state(stato)
         await asyncio.sleep(nic_warmup)
 
         # 3) POWER ON via PJLink
         try:
-            _ = await pj.power(True)
-            #stato=get_public_state(); stato['text']='Proiettore -> ON'; set_public_state(stato)
+            okp = await pj.power(True)
+            stato=get_public_state(); stato['text']='Proiettore -> ON'; set_public_state(stato)
         except Exception as e:
             stato=get_public_state(); stato['text']='Errore accensione proiettore'; set_public_state(stato)
             #log.exception("PJLink POWER ON error: %s", e)
@@ -224,44 +189,10 @@ async def dsp_mute(body: DspMuteReq):
     Mute/unmute globale: usa DSP408Client.mute_all(on).
     """
     dsp = DSP408Client(cfg["dsp"]["host"], int(cfg["dsp"]["port"]))
-    # mappe input/output usate per escludere canali dal MUTE ALL
-    used_in = (cfg.get("dsp") or {}).get("input", {}) or {}
-    used_out = (cfg.get("dsp") or {}).get("output", {}) or {}
-    await dsp.mute_all(body.mute, used_inputs=used_in, used_outputs=used_out)
+    # il driver espone mute_all(on: bool)
+    await dsp.mute_all(body.mute)
     #return {"ok": True, "mute": bool(body.mute)}
     return {"ok": True}
-
-@router.post("/dsp/used")
-async def dsp_used(body: DspUsedReq):
-    """
-    Aggiorna lo stato dei canali usati (toggle IN/OUT) e lo salva in devices.yaml.
-    body.channel: es. 'in0'..'in3' oppure 'out0'..'out7'
-    """
-    cfg_local = load_devices()
-    dsp_cfg = cfg_local.setdefault('dsp', {})
-    in_map = dsp_cfg.setdefault('input', {})
-    out_map = dsp_cfg.setdefault('output', {})
-
-    ch = body.channel
-    if ch.startswith('in'):
-        idx = ch[2:]
-        in_map[idx] = bool(body.used)
-    elif ch.startswith('out'):
-        idx = ch[3:]
-        out_map[idx] = bool(body.used)
-    else:
-        raise HTTPException(status_code=400, detail="Canale non valido")
-
-    # salva su devices.yaml
-    with open(CONFIG_DEV, 'w', encoding='utf-8') as f:
-        yaml.safe_dump(cfg_local, f)
-
-    # aggiorna la cfg globale in memoria
-    global cfg
-    cfg = cfg_local
-
-    return {"ok": True, "channel": ch, "used": bool(body.used)}
-
 
 @router.post("/dsp/gain")
 async def dsp_gain(body: DspStepReq):
@@ -321,28 +252,20 @@ async def dsp_state():
 def _map_shelly(sid:str):
  if sid=='shelly1_ch1': return cfg['shelly1']['base'],cfg['shelly1']['ch1']
  if sid=='shelly1_ch2': return cfg['shelly1']['base'],cfg['shelly1']['ch2']
- if sid=='shelly2_ch1': return cfg['shelly2']['base'],2
- if sid=='shelly2_ch2': return cfg['shelly2']['base'],3
+ if sid=='shelly2_ch1': return cfg['shelly2']['base'],cfg['shelly2']['ch1']
+ if sid=='shelly2_ch2': return cfg['shelly2']['base'],cfg['shelly2']['ch2']
  raise HTTPException(404,'Unknown Shelly sid')
 
 @router.post('/shelly/{sid}/set')
 async def shelly_set(sid:str,body:PowerReq):
- base,ch=_map_shelly(sid)
- if ch==2:
-     sh=ShellyHTTP_script(base)
-     ok=sh.shelly_pro2pm_cover(action='close')
- elif ch==3:
-     sh = ShellyHTTP_script(base)
-     ok = sh.shelly_pro2pm_cover(action='open')
- else:
-     sh=ShellyHTTP(base)
-     ok=await sh.set_relay(ch,body.on)
+ base,ch=_map_shelly(sid); sh=ShellyHTTP(base)
+ ok=await sh.set_relay(ch,body.on)
  if not ok: raise HTTPException(500,'Shelly set failed')
  return {'ok':True}
 
 @router.post('/scene/avvio_semplice')
 async def scene_avvio_semplice():
- #stato=get_public_state(); stato['text']='Avvio lezione semplice...'; set_public_state(stato)
+ stato=get_public_state(); stato['text']='Avvio lezione semplice...'; set_public_state(stato)
  base,ch=_map_shelly('shelly1_ch2')
  sh=ShellyHTTP(base)
  await sh.set_relay(ch,True)
@@ -362,34 +285,25 @@ async def scene_avvio_proiettore(payload:dict|None=None):
  dsp=DSP408Client(cfg['dsp']['host'],int(cfg['dsp']['port']))
  await dsp.mute_all(False)
  pj=PJLinkClient(cfg['projector']['host'],password=(cfg['projector'].get('password') or None))
- #base,ch=cfg['shelly2']['base'],cfg['shelly2']['ch1']
- sh=ShellyHTTP_script(cfg['shelly2']['base'])
- sh.shelly_pro2pm_cover(action='close')
+ base,ch=cfg['shelly2']['base'],cfg['shelly2']['ch1']
+ sh=ShellyHTTP(base); await sh.pulse(ch,800)
  await _power_sequence(True)
  #ready,pw_st = await _wait_power_state(pj, desired=1, budget_s=120)
- await asyncio.sleep(6)
  await pj.set_input(source)
  st=get_public_state(); st['projector']['power']=True; st['projector']['input']=source.upper(); set_public_state(st)
  return {'ok':True}
 
 @router.post('/scene/spegni_aula')
 async def scene_spegni_aula():
- #_=PJLinkClient(cfg['projector']['host'],password=(cfg['projector'].get('password') or None)) #crea istanza proiettore
-
+ pj=PJLinkClient(cfg['projector']['host'],password=(cfg['projector'].get('password') or None)) #crea istanza proiettore
+ await _power_sequence(False)		#avvia sequenza di off
  dsp=DSP408Client(cfg['dsp']['host'],int(cfg['dsp']['port']))  #crea istanza DSP
  await dsp.mute_all(True)		#disabilita ingresso A e uscite 0-3
- await asyncio.sleep(6)
- base,ch=cfg['shelly1']['base'],cfg['shelly1']['ch1']
- sh1 = ShellyHTTP(base)  # crea istanza shelly1
- await sh1.set_relay(cfg['shelly1']['ch2'], False)  # disattiva alimentazione per DSP
- #base,ch=cfg['shelly2']['base'],cfg['shelly2']['ch2']  #prende i parametri di Shelly2, 'telo su/giu'
- st = get_public_state()
- if st['current_lesson'] != 'semplice':
-    await _power_sequence(False)		#avvia sequenza di off
-    sh2 = ShellyHTTP_script(cfg['shelly2']['base'])
-    sh2.shelly_pro2pm_cover(action='open')
-    sh1=ShellyHTTP_script(base) #crea istanza shelly1
-    sh1.projct_off_main()			#disttiva alimentazione per proiettore
+ base,ch=cfg['shelly2']['base'],cfg['shelly2']['ch2']  #prende i parametri di Shelly2, 'telo su/giu'
+ sh=ShellyHTTP(base); await sh.pulse(ch,800)		#crea istanza shelly2 e genera impulso per 'telo su'
+ base1=cfg['shelly1']['base']; sh1=ShellyHTTP(base1) #crea istanza shelly1 
+ await sh1.set_relay(cfg['shelly1']['ch1'],False)			#disttiva alimentazione per proiettore
+ await sh1.set_relay(cfg['shelly1']['ch2'],False)			#disattiva alimentazione per DSP
  st=get_public_state(); st['projector']['power']=False;st['text']="Lezione terminata..."; set_public_state(st)  #aggiorna stato
  return {'ok':True}
 

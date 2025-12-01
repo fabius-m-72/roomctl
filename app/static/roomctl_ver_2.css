@@ -1,10 +1,9 @@
 :root{
-  /* === PARAMETRI PER 1080x720 LANDSCAPE ===++ */
+  /* === PARAMETRI PER 1080x720 LANDSCAPE === */
   --screen-w: 1080px;     /* larghezza schermo */
   --screen-h: 720px;      /* altezza schermo  */
   --pad-x: 20px;          /* padding orizzontale */
   --pad-y: 14px;          /* padding verticale   */
-  --font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
 
   --header-h: 64px;       /* altezza header */
   --footer-h: 96px;       /* altezza footer */
@@ -25,13 +24,7 @@
 html, body { width:100%; height:100%; }
 body {
   display:flex; align-items:center; justify-content:center;
-  margin: 0;
   background:#0f172a; color:#e2e8f0; overflow:hidden;
-  font-family: var(--font-family);
-}
-
-button, input, select, textarea {
-  font-family: inherit;
 }
 
 /* Wrapper fisso 1080x720 */
@@ -140,7 +133,7 @@ button, input, select, textarea {
 .mt6{ margin-top:6px; }
 
 .op-label{ font-weight:600; }
-.op-label.small{ font-size:15px; }
+.op-label.small{ font-size:13px; }
 .op-label.tiny{ font-size:12px; }
 
 .btn-mini{
@@ -210,27 +203,12 @@ button, input, select, textarea {
   margin-bottom: 16px;
 }
 
-
 .pin-key {
   font-size: 1.6rem;
   padding: 16px 0;
   border-radius: 12px;
-  background: #f3f3f3;      /* sfondo chiaro */
-  color: #111;              /* testo scuro */
-  border: 1px solid #ccc;   /* bordo leggero */
+  border: none;
   cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
-}
-
-/* effetto hover / active opzionali */
-.pin-key:hover {
-  background: #e7e7e7;
-}
-
-.pin-key:active {
-  background: #dddddd;
-  transform: translateY(1px);
-}
 }
 
 .pin-key-action {
@@ -247,140 +225,12 @@ button, input, select, textarea {
 .pin-ok {
   flex: 1;
   padding: 10px 0;
-  border-radius: 10px;
-  background: #f3f3f3;      /* sfondo chiaro */
-  color: #111;
-  border: 1px solid #ccc;
-  cursor: pointer;
 }
-
-.pin-cancel:hover,
-.pin-ok:hover {
-  background: #e7e7e7;
-}
-
-.pin-cancel:active,
-.pin-ok:active {
-  background: #dddddd;
-  transform: translateY(1px);
-}
-
-
-.buttons-row-center {
-  /*margin-top: .01rem; */  /* regola a gusto */
-  display: flex;
-  justify-content: center;
-}
-
-/* Aspetto dei pulsanti disabilitati (lezioni in corso / bloccate) */
-.btn:disabled {
-  opacity: 0.4;           /* li rende "sbiaditi" */
-  filter: grayscale(1);   /* desatura il colore */
-  cursor: default;        /* niente manina da link */
-  box-shadow: none;       /* opzionale: togli ombra se ne hai */
-  border-color: #666;      /* bordo più spento */
-}
-
-/* il pulsante Spegni occupa entrambe le colonne e centrato*/
-.btn-span-2 {
-	grid-column: 1 / -1;
-	justify-self:center}
-	
-
-/* Se vuoi evitare che cambino colore al passaggio del mouse (desktop) */
-.btn:disabled:hover {
-  background-color: inherit;
-}
-
-/* (opzionale) se hai transizioni sui bottoni */
-.btn {
-  transition: opacity 0.2s ease, filter 0.2s ease;
-}
-
-.scene-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 1100;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.scene-overlay-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-}
-
-.scene-overlay-dialog {
-  position: relative;
-  background: #111;
-  border-radius: 16px;
-  padding: 24px 32px;
-  min-width: 320px;
-  max-width: 480px;
-  text-align: center;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
-
-.scene-overlay-title {
-  font-size: 1.5rem;
-  margin-bottom: 12px;
-  font-weight: 600;
-}
-
-.scene-status-label {
-  font-size: 1.1rem;
-}
-
-/* Nasconde gli elementi con la classe "hidden" (come faceva Tailwind) */
-.hidden {
-  display: none !important;
-}
-
-
-/*
-.tab-btn {
-  padding: 8px 14px;
-  border: 1px solid var(--c-border, #ccc);
-  border-radius: 6px;
-  background: var(--c-bg, #8f8f8f);
-  font-weight: 600;
-}
-.tab-btn.tab-active {
-  background: var(--c-accent, #1a6bab);
-  border-color: var(--c-accent-b, #8ac3ff);
-}
-.tab-panel.hidden { display:none; }  */
-
-/* ===== DSP layout “tabulato” ===== */
-/*.dsp-row {
-  align-items: center;
-}
-
-.dsp-row-title {
-  min-width: 130px;*/     /* “colonna” fissa per IN A / OUT n */
-/*}
-
-
-.dsp-group {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-*/
-
-
-
-</style>
-
-
 
 /* Area operatore
 .op-main{ overflow:auto; }
 .panel{
-1  background: rgba(255,255,255,.04);
+  background: rgba(255,255,255,.04);
   border:1px solid rgba(255,255,255,.12);
   border-radius:12px;
   padding:12px; margin-bottom: 10px;

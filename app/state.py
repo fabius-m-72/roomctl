@@ -1,4 +1,10 @@
-_state={'projector':{'power':'STANDBY','input':'HDMI1'},'text':'Sistema pronto'}
+_state={
+    'projector':{'power':'STANDBY','input':'HDMI1'},
+    'dsp':{'state':'OK'},
+    'shelly':{'main':'OK', 'telo':'OK'},
+    'text':'Sistema pronto',
+    'current_lesson':''
+}
 
 def set_public_state(d): _state.update(d)
 

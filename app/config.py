@@ -4,7 +4,7 @@ from pathlib import Path
 import yaml
 
 # Percorso della YAML (puoi cambiarlo con env ROOMCTL_CONFIG)
-CONFIG_PATH = Path(os.environ.get("ROOMCTL_DEVICES", "/opt/roomctl/config/devices.yaml"))
+CONFIG_PATH = Path(os.environ.get("ROOMCTL_CONFIG", "/opt/roomctl/config/devices.yaml"))
 
 # Default ragionevoli: adatta gli IP ai tuoi
 DEFAULT_DEVICES: dict = {

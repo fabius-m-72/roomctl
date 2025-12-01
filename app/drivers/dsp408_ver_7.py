@@ -204,27 +204,16 @@ class DSP408Client:
 			raise ValueError(f"bus sconosciuto: {bus}")
 		return self.bus_map[bus]
 
-
-	async def mute_all(self, on: bool, used_inputs: Optional[Dict[str, bool]] = None,
-					   used_outputs: Optional[Dict[str, bool]] = None) -> None:
+	async def mute_all(self, on: bool) -> None:
 		def _do():
-			in_map = used_inputs or {}
-			out_map = used_outputs or {}
-
-			# IN 0..3 e OUT 0..3
-			for ch in (0, 1, 2, 3):
-				ch_s = str(ch)
-				mute_in = bool(on and in_map.get(ch_s, True))
-				self._cli.set_mute(is_output=False, channel=ch, mute=mute_in)
-				mute_out = bool(on and out_map.get(ch_s, True))
-				self._cli.set_mute(is_output=True, channel=ch, mute=mute_out)
-
-			# OUT 4..7
-			for ch in (4, 5, 6, 7):
-				ch_s = str(ch)
-				mute_out = bool(on and out_map.get(ch_s, True))
-				self._cli.set_mute(is_output=True, channel=ch, mute=mute_out)
-
+			if on:
+				# silenzia IN A (1) e OUT0..3 (0..3) — adatta se serve
+				#self._cli.set_mute(is_output=False, channel=0, mute=on)
+				for ch in (0,1,2,3):
+					self._cli.set_mute(is_output=False, channel=ch, mute=on & input[str(ch)])
+					self._cli.set_mute(is_output=True, channel=ch, mute=on & output[str(ch)])
+				for ch in (4,5,6,7):
+					self._cli.set_mute(is_output=True, channel=ch, mute=on & output[str(ch)])
 		await asyncio.to_thread(_do)
 
 	async def apply_gain_delta(self, bus: str, sign: int) -> float:

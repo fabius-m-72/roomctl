@@ -1,121 +1,3 @@
-
-
-
-{% extends "base.html" %}
-{% block content %}
-<div class="screen">
-  <header class="header">
-    <div class="title">ROOMCTL</div>
-  </header>
-
-  <main class="main">
-    {# lezione attiva: "semplice", "video", "combinata" oppure None #}
-    {% set active_lesson = state.current_lesson if state and (state.current_lesson is defined) and state.current_lesson else None %}
-
-    {% if show_combined %}
-      <div class="buttons-grid">
-        <form method="post" action="/ui/scene/avvio_semplice" class="scene-form">
-          <button class="btn btn-green"
-                  {% if active_lesson %}disabled{% endif %}>
-            Avvio Lezione Semplice{% if active_lesson == 'semplice' %} ...in corso{% endif %}
-          </button>
-        </form>
-
-        <form method="post" action="/ui/scene/avvio_video" class="scene-form">
-          <button class="btn btn-blue"
-                  {% if active_lesson %}disabled{% endif %}>
-            Avvio Lezione Video{% if active_lesson == 'video' %} ...in corso{% endif %}
-          </button>
-        </form>
-
-
-        <form method="post" action="/ui/scene/avvio_video_combinata" class="scene-form">
-          <button class="btn btn-ice"
-                  {% if active_lesson %}disabled{% endif %}>
-            Avvio Lezione<br>Video Combinata{% if active_lesson == 'combinata' %} ...in corso{% endif %}
-          </button>
-        </form>
-
-        <form method="post" action="/ui/scene/spegni_aula" class="scene-form" >
-          <button class="btn btn-sand"
-                    {% if not active_lesson %}disabled{% endif %}>
-            Fine Lezione – Spegni Aula
-          </button>
-        </form>
-      </div>
-    {% else %}
-      <div class="buttons-grid">
-        <form method="post" action="/ui/scene/avvio_semplice" class="scene-form">
-          <button class="btn btn-green"
-                  {% if active_lesson %}disabled{% endif %}>
-            Avvio Lezione Semplice{% if active_lesson == 'semplice' %} ...in corso{% endif %}
-          </button>
-        </form>
-
-        <form method="post" action="/ui/scene/avvio_video" class="scene-form">
-          <button class="btn btn-blue"
-                  {% if active_lesson %}disabled{% endif %}>
-            Avvio Lezione Video{% if active_lesson == 'video' %} ...in corso{% endif %}
-          </button>
-        </form>
-      
-        <form method="post" action="/ui/scene/spegni_aula" class="btn-span-2" class="scene-form">
-          <button class="btn btn-sand btn-span-2"
-                {% if not active_lesson %}disabled{% endif %}>
-            Fine Lezione – Spegni Aula
-          </button>
-        </form>
-      </div>
-    {% endif %}
-  </main>
-
-  <footer class="footer">
-    <div class="status">Stato: {{ state.text or '' }}</div>
-    <div id="badge-input" class="badge">
-      Input: {{ (state.projector.input if state.projector else '—') if state else '—' }}
-    </div>
-
-    {# Area Operatore sempre abilitato #}
-    <button type="button" class="btn-operator" id="open-pin-overlay">
-      Area Operatore
-    </button>
-  </footer>
-</div>
-
-{# OVERLAY PIN OPERATORE #}
-<div id="pin-overlay" class="pin-overlay hidden">
-  <div class="pin-overlay-backdrop"></div>
-
-  <div class="pin-overlay-dialog">
-    <div class="pin-overlay-title">Accesso Operatore</div>
-
-    {% if pin_error %}
-      <div class="pin-error">PIN non valido. Riprova.</div>
-    {% endif %}
-
-    <form method="post" action="/auth/pin" class="pin-keypad-form">
-      <div id="pin-dots" class="pin-dots"></div>
-
-      <input type="hidden" name="pin" id="pin-value">
-
-      <div class="pin-keypad-grid">
-        {% for n in [1,2,3,4,5,6,7,8,9] %}
-        <button type="button" class="pin-key" data-key="{{ n }}">{{ n }}</button>
-        {% endfor %}
-
-        <button type="button" class="pin-key pin-key-action" data-action="clear">C</button>
-        <button type="button" class="pin-key" data-key="0">0</button>
-        <button type="button" class="pin-key pin-key-action" data-action="backspace">⌫</button>
-      </div>
-
-      <div class="pin-actions">
-        <button type="button" class="btn pin-cancel" id="pin-cancel">Annulla</button>
-        <button type="submit" class="btn btn-operator pin-ok">OK</button>
-      </div>
-    </form>
-  </div>
-</div>
-
 <!-- OVERLAY AVVIO/ARRESTO LEZIONE -->
 <div id="scene-overlay" class="scene-overlay hidden">
   <div class="scene-overlay-backdrop"></div>
@@ -129,6 +11,7 @@
     </div>
   </div>
 </div>
+
 
 <script>
 (function() {
@@ -259,4 +142,41 @@
 
 })();
 </script>
-{% endblock %}
+
+
+
+.scene-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scene-overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.scene-overlay-dialog {
+  position: relative;
+  background: #111;
+  border-radius: 16px;
+  padding: 24px 32px;
+  min-width: 320px;
+  max-width: 480px;
+  text-align: center;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+.scene-overlay-title {
+  font-size: 1.5rem;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.scene-status-label {
+  font-size: 1.1rem;
+}

@@ -7,7 +7,7 @@ try:
  _ph=PasswordHasher()
 except Exception:
  _ph=None
-_VALID_TOKENS=set(); CONFIG_MAIN=os.environ.get('ROOMCTL_MAIN_CONFIG','/opt/roomctl/config/config.yaml')
+_VALID_TOKENS=set(); CONFIG_MAIN=os.environ.get('ROOMCTL_CONFIG','/opt/roomctl/config/config.yaml')
 
 def _load_config():
  try:
